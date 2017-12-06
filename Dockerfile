@@ -47,10 +47,12 @@ RUN service postgresql start \
     && su postgres -c "psql -c \"UPDATE pg_database SET datistemplate = FALSE WHERE datname = 'template1';\"" \
     && su postgres -c "psql -c \"DROP DATABASE template1;\"" \
     && su postgres -c "psql -c \"CREATE DATABASE template1 WITH TEMPLATE = template0 ENCODING = 'UNICODE';\"" \
-    && su postgres -c "psql -c \" UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'template1';\"" \
+    && su postgres -c "psql -c \"UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'template1';\"" \
     && su postgres -c "psql -d template1 -c \"VACUUM FREEZE;\""
 
-CMD service apache2 start && \
-    service postgresql start && \
-    docker/postgres_boca.sh && \
-    sleep infinity
+EXPOSE 80
+
+CMD service apache2 start \
+    && service postgresql start \
+    && docker/postgres_boca.sh \
+    && bash
