@@ -1,0 +1,36 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  RELEASE_IMAGE: $CI_REGISTRY_NAME:$CI_BUILD_REF_NAME
+
+build boca:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  script:
+    - docker login -u "gitlab-ci-token" -p "$CI_JOB_TOKEN" $CI_REGISTRY
+    - docker build -t $RELEASE_IMAGE .
+    - docker tag $RELEASE_IMAGE "$CI_REGISTRY_NAME:latest"
+    - docker push $RELEASE_IMAGE
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  only:
+    - master
+  environment: production
+  tags:
+    - docker
+
+deploy to production:
+  stage: deploy
+  image: cdrx/rancher-gitlab-deploy
+  services:
+    - docker:dind
+  script:
+    - upgrade --environment Production --stack boca --service boca --new-image $RELEASE_IMAGE --no-finish-upgrade --debug
+  only:
+    - master
+  environment: production
+  tags:
+    - docker
